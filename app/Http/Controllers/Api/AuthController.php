@@ -38,9 +38,7 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
-
-        if ($validator->fails())
-        {
+        if ($validator->fails()){
             return response()->json(array(
             'success' => false,
             'error' => $validator->getMessageBag()),
@@ -66,17 +64,15 @@ class AuthController extends Controller
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|confirmed|min:6',
-            'phone_number' => 'nullable|unique:profile_information',
+            'phone_number' => 'nullable|unique:users',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-
         if ($validator->fails()){
             return response()->json(array(
             'success' => false,
             'error' => $validator->getMessageBag()),
             400);
         }
-
         $user = User::create(array_merge(
                     $validator->validated(),
                     ['password' => bcrypt($request->password)],
@@ -87,7 +83,6 @@ class AuthController extends Controller
             }
             $profileInformation = new ProfileInformation;
             $profileInformation->user_id = $user->id;
-            $profileInformation->phone_number = $request->phone_number??null;
             $profileInformation->profile_picture = isset($profieImagePath)?$profieImagePath:null;
             $profileInformation->save();
         }
@@ -101,8 +96,6 @@ class AuthController extends Controller
                 $message->to($request->email);
                 $message->subject('Welcome to Recepient');
             });
-
-
         return response()->json([
             'message' => 'User successfully registered',
             'user' => $user,
