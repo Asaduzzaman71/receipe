@@ -2,8 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\SurveyController;
-use App\Http\Controllers\Api\DealController;
+use App\Http\Controllers\Api\CategoryController;
 
 
 
@@ -17,27 +16,31 @@ use App\Http\Controllers\Api\DealController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
 Route::post('auth/login', [AuthController::class, 'login']);
 Route::post('auth/register', [AuthController::class, 'register']);
+
 //email verification api
 Route::get('/user/{userId}/verify/{otp}', [AuthController::class, 'verifyAccount']);
 Route::post('/resend-otp-for-email-verify',[AuthController::class, 'resendVerificationEmail']);
+
+//password reset
+Route::post('/forgot-password', [AuthController::class, 'submitForgetPasswordForm']);
+Route::post('/reset-password', [AuthController::class, 'submitResetPasswordForm']);
+
 Route::group([
     'middleware' => 'jwt.verify',
     'prefix' => 'auth'
-
 ], function ($router) {
-
     Route::get('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
 
-
-Route::group( ['middleware' => 'jwt.verify'], function()
-{
+Route::group( ['middleware' => 'jwt.verify'], function(){
     Route::get('/users', [AuthController::class, 'userList']);
+    Route::resource('categories', CategoryController::class);
 });
-Route::post('/forgot-password', [AuthController::class, 'submitForgetPasswordForm']);
-Route::post('/reset-password', [AuthController::class, 'submitResetPasswordForm']);
+
+
 

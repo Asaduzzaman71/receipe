@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
-use App\Models\Learn;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Hash;
