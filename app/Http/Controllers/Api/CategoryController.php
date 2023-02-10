@@ -61,7 +61,7 @@ class CategoryController extends Controller
     public function show( $id)
     {
         try {
-            $category = Category::whereId($id)->first();
+            $category = Category::with('subCategories')->whereId($id)->first();
             return response()->json([
                 'category' => $category,
             ], 200);
