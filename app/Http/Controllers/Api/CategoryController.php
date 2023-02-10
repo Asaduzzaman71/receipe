@@ -7,6 +7,7 @@ use App\Traits\FileUpload;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 class CategoryController extends Controller
 {
@@ -14,7 +15,7 @@ class CategoryController extends Controller
     public function index()
     {
         try {
-            $categories = Category::select('name','image')->latest()->all();
+            $categories = Category::get()->latest();
             return response()->json([
                 'categories' => $categories,
             ], 200);
@@ -28,7 +29,7 @@ class CategoryController extends Controller
     public function store(Request $request){
         try{
             $validator = Validator::make($request->all(), [
-                'name' => 'required||unique:users|string|between:2,100',
+                'name' => 'required||unique:users|string|between:2,100|unique:categories',
                 'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
             if ($validator->fails()){
@@ -71,14 +72,52 @@ class CategoryController extends Controller
         }
     }
     
-    public function update(Request $request, $id)
-    {
-        //save the edited post
+    public function update(Request $request, $id){
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required||unique:users|string|between:2,100',
+                'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
+            if ($validator->fails()){
+                return response()->json(array(
+                'success' => false,
+                'error' => $validator->getMessageBag()),
+                400);
+            }
+          
+            $category = Category::whereId($id)->first();
+            $category->name = $request->name;
+            if($request->hasFile('image')){
+                Storage::delete($category->image);
+                $image = $this->FileUpload($request->image,'images');
+                $category->image = $image;
+            }
+            $category->save();
+            return response()->json([
+                'category' => $category,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     
     public function destroy( $id)
     {
-        //delete a post
+        try {
+          
+            $category = Category::whereId($id)->first();
+            Storage::delete($category->image);
+            $category->delete();
+            return response()->json([
+                'message' => 'category deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
