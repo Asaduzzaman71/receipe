@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Category;
+use App\Models\Ingredient;
 use App\Traits\FileUpload;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-class CategoryController extends Controller
+class IngredientController extends Controller
 {
     use FileUpload;
     public function index()
     {
         try {
-            $categories = Category::get()->latest();
+            $ingredients = Ingredient::get()->latest();
             return response()->json([
-                'categories' => $categories,
+                'ingredients' => $ingredients,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -29,8 +29,8 @@ class CategoryController extends Controller
     public function store(Request $request){
         try{
             $validator = Validator::make($request->all(), [
-                'name' => 'required||unique:users|string|between:2,100|unique:categories',
-                'image' => 'required',
+                'name' => 'required||unique:users|string|between:2,100|unique:ingredients',
+                'image' => 'required|string',
             ]);
             if ($validator->fails()){
                 return response()->json(array(
@@ -42,13 +42,13 @@ class CategoryController extends Controller
                 $base64_image = $request->image;
                 $imageNameWithPath = $this->FileUpload($base64_image,'images');
             }
-            $newCategory = Category::create([
+            $newIngredient = Ingredient::create([
                 'name' => $request->name,
                 'image' => isset($imageNameWithPath) ? $imageNameWithPath : null,
             ]);
             return response()->json([
-                'message' => 'Category created successfully',
-                'category' => $newCategory,
+                'message' => 'Ingredient created successfully',
+                'ingredient' => $newIngredient,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -62,9 +62,9 @@ class CategoryController extends Controller
     public function show( $id)
     {
         try {
-            $category = Category::with('subCategories')->whereId($id)->first();
+            $ingredient = Ingredient::whereId($id)->first();
             return response()->json([
-                'category' => $category,
+                'ingredient' => $ingredient,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -86,17 +86,16 @@ class CategoryController extends Controller
                 400);
             }
           
-            $category = Category::whereId($id)->first();
-            $category->name = $request->name;
-          
+            $ingredient = Ingredient::whereId($id)->first();
+            $ingredient->name = $request->name;
             if($request->image){
                 $base64_image = $request->image;
                 $imageNameWithPath = $this->FileUpload($base64_image,'images');
-                $category->image = $imageNameWithPath;
+                $ingredient->image = $imageNameWithPath;
             }
-            $category->save();
+            $ingredient->save();
             return response()->json([
-                'category' => $category,
+                'ingredient' => $ingredient,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -110,11 +109,11 @@ class CategoryController extends Controller
     {
         try {
           
-            $category = Category::whereId($id)->first();
-            Storage::delete($category->image);
-            $category->delete();
+            $ingredient = Ingredient::whereId($id)->first();
+            Storage::delete($ingredient->image);
+            $ingredient->delete();
             return response()->json([
-                'message' => 'category deleted successfully'
+                'message' => 'Ingredient deleted successfully'
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

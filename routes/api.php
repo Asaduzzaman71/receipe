@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\SubCategoryController;
+use App\Http\Controllers\Api\IngredientController;
 
 
 
@@ -38,10 +39,11 @@ Route::group([
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
 
-Route::group( ['middleware' => 'jwt.verify'], function(){
+Route::group( ['middleware' => ['jwt.verify']], function(){
     Route::get('/users', [AuthController::class, 'userList']);
     Route::resource('categories', CategoryController::class);
     Route::resource('subcategories', SubCategoryController::class);
+    Route::resource('ingredients', IngredientController::class);
 });
 
 
