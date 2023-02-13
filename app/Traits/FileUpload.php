@@ -13,7 +13,7 @@ trait FileUpload
                 $extension = explode('/', explode(':', substr($base64_image, 0, strpos($base64_image, ';')))[1])[1];
                 $imageName = Str::random(36).'.'.$extension;
                 $imageNameWithPath =  $path.'/'.$imageName;
-                Storage::disk('public',$path)->put($imageName, $data);
+                Storage::disk('public')->put($imageNameWithPath, $data);
                 return $imageNameWithPath;
             }
     }
