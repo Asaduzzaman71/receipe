@@ -15,7 +15,7 @@ class CategoryController extends Controller
     public function index()
     {
         try {
-            $categories = Category::get()->latest();
+            $categories = Category::all();
             return response()->json([
                 'categories' => $categories,
             ], 200);
