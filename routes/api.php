@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\IngredientController;
+use App\Http\Controllers\Api\TutorialController;
 
 
 
@@ -44,7 +45,8 @@ Route::group( ['middleware' => ['jwt.verify']], function(){
     Route::resource('categories', CategoryController::class);
     Route::resource('subcategories', SubCategoryController::class);
     Route::resource('ingredients', IngredientController::class);
+    Route::resource('tutorials', TutorialController::class);
+    Route::post('tutorials/video-upload', [TutorialController::class, 'videoUpload']);
 });
-
 
 
