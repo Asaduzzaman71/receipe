@@ -40,13 +40,13 @@ Route::group([
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
 
-Route::group( ['middleware' => ['jwt.verify']], function(){
+Route::group( ['middleware' => ['jwt.verify','admin']], function(){
     Route::get('/users', [AuthController::class, 'userList']);
     Route::resource('categories', CategoryController::class);
     Route::resource('subcategories', SubCategoryController::class);
     Route::resource('ingredients', IngredientController::class);
     Route::resource('tutorials', TutorialController::class);
-    Route::post('tutorials/video-upload', [TutorialController::class, 'videoUpload']);
+    Route::post('tutorials/id/video-upload', [TutorialController::class, 'videoUpload']);
 });
 
 

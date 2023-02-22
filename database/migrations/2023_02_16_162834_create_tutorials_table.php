@@ -20,7 +20,7 @@ class CreateTutorialsTable extends Migration
             $table->text('description');
             $table->string('video')->nullable();
             $table->string('ingredients')->nullable();
-            $table->tinyInteger('isPremium')->default(0);
+            $table->tinyInteger('is_premium')->default(0);
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });

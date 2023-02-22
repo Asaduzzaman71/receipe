@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\tutorial;
+use App\Models\Tutorial;
 use App\Models\TutorialImage;
 use App\Models\TutorialStep;
 use App\Traits\FileUpload;
 use App\Http\Controllers\Controller;
+use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,9 @@ class TutorialController extends Controller
     public function index()
     {
         try {
-            $tutorials = Tutorial::latest()->get();
+            // $tutorials = Tutorial::with('tutorialImages')->get('title','description','is_premium');
+            $tutorials = Tutorial::join('tutorial_images', 'tutorials.id', '=', 'tutorial_images.tutorial_id')
+               ->get(['tutorials.id','tutorials.title','tutorials.is_premium', 'tutorial_images.*']);
             return response()->json([
                 'tutorials' => $tutorials,
             ], 200);
@@ -32,12 +35,11 @@ class TutorialController extends Controller
         try{
             $validator = Validator::make($request->all(), [
                 'title' => 'required||unique:tutorials|string|between:2,500',
-                'category_id' => 'required|string',
+                'category_id' => 'required|integer',
                 'description' => 'required|string',
-                'ingredients.*' => 'required|number|distinct', 
+                'ingredients.*' => 'required|integer|distinct', 
                 'steps.*' => 'required', 
-                'video' => 'sometimes|string',
-                'images' => 'sometimes|string',
+                'images.*' => 'sometimes|string',
                 'is_premium' => 'required|boolean',
             ]);
             if ($validator->fails()){
@@ -50,20 +52,24 @@ class TutorialController extends Controller
                 $base64_video = $request->video;
                 $videoNameWithPath = $this->FileUpload($base64_video,'videos');
             }
+          
             $newtutorial = Tutorial::create([
-                'title' => $request->name,
+                'category_id' => $request->category_id,
+                'title' => $request->title,
                 'description' => $request->description,
                 'ingredients' => $request->ingredients,
                 'video' => isset($videoNameWithPath) ? $videoNameWithPath : null,
                 'is_premium' => $request->is_premium
             ]);
+         
             foreach( $request->steps as $step ){
                 TutorialStep::create([
                     'tutorial_id' => $newtutorial->id,
-                    'name' => $step->name,
-                    'description' => $step->description,
+                    'name' => $step['name'],
+                    'description' => $step['description'],
                 ]);
             }
+     
             foreach($request->images as $image ){
                 $imageNameWithPath = $this->FileUpload($image,'images');
                 TutorialImage::create([
@@ -87,6 +93,8 @@ class TutorialController extends Controller
     public function show( $id){
         try {
             $tutorial = Tutorial::with('tutorialSteps','tutorialImages')->whereId($id)->first();
+            $ingredients = Ingredient::whereIn('id', json_decode($tutorial->ingredients))->get();
+            $tutorial->ingredients = $ingredients;
             return response()->json([
                 'tutorial' => $tutorial,
             ], 200);
@@ -100,13 +108,12 @@ class TutorialController extends Controller
     public function update(Request $request, $id){
         try {
             $validator = Validator::make($request->all(), [
-                'title' => 'required||unique:tutorials|string|between:2,500',
-                'category_id' => 'required|string',
+                'title' => 'required|string|between:2,500',
+                'category_id' => 'required|integer',
                 'description' => 'required|string',
-                'ingredients.*' => 'required|number|distinct', 
+                'ingredients.*' => 'required|integer|distinct', 
                 'steps.*' => 'required', 
-                'video' => 'sometimes|string',
-                'images' => 'sometimes|string',
+                'images.*' => 'sometimes|string',
                 'is_premium' => 'required|boolean',
             ]);
             if ($validator->fails()){
@@ -119,6 +126,7 @@ class TutorialController extends Controller
             $tutorial->title = $request->title;
             $tutorial->description = $request->description;
             $tutorial->ingredients = $request->ingredients;
+            $tutorial->is_premium = $request->is_premium;
             if($request->video){
                $base64_video = $request->video;
                $videoNameWithPath = $this->FileUpload($base64_video,'videos');
@@ -129,12 +137,13 @@ class TutorialController extends Controller
             foreach( $request->steps as $step ){
                 TutorialStep::create([
                     'tutorial_id' => $tutorial->id,
-                    'name' => $step->name,
-                    'description' => $step->description,
+                    'name' => $step['name'],
+                    'description' => $step['description'],
                 ]);
             }
             if($request->images){
-                TutorialImage::whereIn('tutorial_id',$request->old_images_id)->delete();
+                TutorialImage::whereIn('id',json_decode($request->old_images_id))->delete();
+
                 foreach($request->images as $image ){
                     $imageNameWithPath = $this->FileUpload($image,'images');
                     TutorialImage::create([

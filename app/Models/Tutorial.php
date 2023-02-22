@@ -11,9 +11,9 @@ class Tutorial extends Model
     use HasFactory;
     protected $guarded = [];
     public function tutorialSteps(){
-        $this->hasMany(TutorialStep::class);
+        return  $this->hasMany(TutorialStep::class);
     }
      public function tutorialImages(){
-        $this->hasMany(TutorialImage::class);
+       return   $this->hasMany(TutorialImage::class);
     }
 }
