@@ -18,9 +18,10 @@ class TutorialController extends Controller
     public function index()
     {
         try {
-            // $tutorials = Tutorial::with('tutorialImages')->get('title','description','is_premium');
-            $tutorials = Tutorial::join('tutorial_images', 'tutorials.id', '=', 'tutorial_images.tutorial_id')
-               ->get(['tutorials.id','tutorials.title','tutorials.is_premium', 'tutorial_images.*']);
+            $tutorials = Tutorial::select('id','title','description')->with('tutorialImages')->get();
+            // $tutorials = Tutorial::with('tutorialImages')->select('title','description','is_premium','turotial_images:id');
+            // $tutorials = Tutorial::join('tutorial_images', 'tutorials.id', '=', 'tutorial_images.tutorial_id')
+            //    ->get(['tutorials.id','tutorials.title','tutorials.is_premium', 'tutorial_images.*']);
             return response()->json([
                 'tutorials' => $tutorials,
             ], 200);
@@ -40,6 +41,8 @@ class TutorialController extends Controller
                 'ingredients.*' => 'required|integer|distinct', 
                 'steps.*' => 'required', 
                 'images.*' => 'sometimes|string',
+                'calorie' => 'string|nullable',
+                'video_length' => 'string|nullable',
                 'is_premium' => 'required|boolean',
             ]);
             if ($validator->fails()){
@@ -58,6 +61,8 @@ class TutorialController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'ingredients' => $request->ingredients,
+                'calorie' => $request->calorie,
+                'video_length' => $request->video_length,
                 'video' => isset($videoNameWithPath) ? $videoNameWithPath : null,
                 'is_premium' => $request->is_premium
             ]);
@@ -114,6 +119,8 @@ class TutorialController extends Controller
                 'ingredients.*' => 'required|integer|distinct', 
                 'steps.*' => 'required', 
                 'images.*' => 'sometimes|string',
+                'calorie' => 'string|nullable',
+                'video_length' => 'string|nullable',
                 'is_premium' => 'required|boolean',
             ]);
             if ($validator->fails()){
@@ -126,6 +133,8 @@ class TutorialController extends Controller
             $tutorial->title = $request->title;
             $tutorial->description = $request->description;
             $tutorial->ingredients = $request->ingredients;
+            $tutorial->calorie = $request->calorie;
+            $tutorial->video_length = $request->video_length;
             $tutorial->is_premium = $request->is_premium;
             if($request->video){
                $base64_video = $request->video;
@@ -142,8 +151,11 @@ class TutorialController extends Controller
                 ]);
             }
             if($request->images){
-                TutorialImage::whereIn('id',json_decode($request->old_images_id))->delete();
-
+                $tutorialImages = TutorialImage::whereIn('id',json_decode($request->old_images_id))->get();
+                foreach($tutorialImages as $tutorialImage){
+                    Storage::disk('public')->delete($tutorialImage->image);
+                    $tutorialImage->delete();
+                }
                 foreach($request->images as $image ){
                     $imageNameWithPath = $this->FileUpload($image,'images');
                     TutorialImage::create([
@@ -165,8 +177,7 @@ class TutorialController extends Controller
     public function videoUpload(Request $request, $id){
             $tutorial = Tutorial::whereId($id)->first();
             if($request->video){
-                $base64_video = $request->video;
-                $videoNameWithPath = $this->FileUpload($base64_video,'videos');
+                $videoNameWithPath = $this->VideoUpload($request->video,'videos');
             }
             $tutorial->video = isset($videoNameWithPath) ? $videoNameWithPath : null;
             $tutorial->save();
@@ -181,6 +192,11 @@ class TutorialController extends Controller
             $tutorial = Tutorial::whereId($id)->first();
             Storage::delete($tutorial->video);
             TutorialStep::where('tutorial_id',$id)->delete();
+            $tutorialImages = TutorialImage::where('tutorial_id',$id)->get();
+            foreach($tutorialImages as $tutorialImage){
+                Storage::disk('public')->delete($tutorialImage->image);
+                $tutorialImage->delete();
+            }
             $tutorial->delete();
             return response()->json([
                 'message' => 'tutorial deleted successfully'
