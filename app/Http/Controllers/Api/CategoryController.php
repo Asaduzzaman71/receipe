@@ -29,7 +29,7 @@ class CategoryController extends Controller
     public function store(Request $request){
         try{
             $validator = Validator::make($request->all(), [
-                'name' => 'required||unique:users|string|between:2,100|unique:categories',
+                'name' => 'required|string|between:2,100|unique:categories',
                 'image' => 'required',
             ]);
             if ($validator->fails()){
@@ -76,7 +76,7 @@ class CategoryController extends Controller
     public function update(Request $request, $id){
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required||unique:users|string|between:2,100',
+                'name' => 'required|string|between:2,100',
                 'image' => 'sometimes|string',
             ]);
             if ($validator->fails()){
