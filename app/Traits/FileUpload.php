@@ -2,6 +2,7 @@
 namespace App\Traits;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 trait FileUpload
 {
@@ -17,9 +18,5 @@ trait FileUpload
             return $imageNameWithPath;
         }
     }
-
-    public function VideoUpload($file, $path = 'undefined'){
-        $file = $file->store($path,'public');
-        return $file;
-    }
+    
 }

@@ -174,10 +174,11 @@ class TutorialController extends Controller
         }
     }
 
-    public function videoUpload(Request $request, $id){
-            $tutorial = Tutorial::whereId($id)->first();
-            if($request->video){
-                $videoNameWithPath = $this->VideoUpload($request->video,'videos');
+    public function uploadVideo(Request $request){
+            $tutorial = Tutorial::whereId($request->tutorial_id)->first();
+            if($request->hasFile('video')){
+                 Storage::disk('public')->delete( $tutorial->video);
+                $videoNameWithPath = $request->video->store('videos','public');
             }
             $tutorial->video = isset($videoNameWithPath) ? $videoNameWithPath : null;
             $tutorial->save();

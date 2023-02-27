@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\IngredientController;
 use App\Http\Controllers\Api\TutorialController;
+use App\Http\Controllers\Api\BlogController;
 
 
 
@@ -46,7 +47,8 @@ Route::group( ['middleware' => ['jwt.verify','admin']], function(){
     Route::resource('subcategories', SubCategoryController::class);
     Route::resource('ingredients', IngredientController::class);
     Route::resource('tutorials', TutorialController::class);
-    Route::post('tutorials/id/video-upload', [TutorialController::class, 'videoUpload']);
+    Route::post('/tutorials/video-upload', [TutorialController::class, 'uploadVideo']);
+    Route::resource('blogs', BlogController::class);
 });
 
 
