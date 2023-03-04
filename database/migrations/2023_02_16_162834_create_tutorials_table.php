@@ -18,7 +18,6 @@ class CreateTutorialsTable extends Migration
             $table->integer('category_id');
             $table->string('title')->unique();
             $table->string('calorie')->nullable();
-            $table->string('title')->unique();
             $table->text('description');
             $table->string('video')->nullable();
             $table->string('video_length')->nullable();

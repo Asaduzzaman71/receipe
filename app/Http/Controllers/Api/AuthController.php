@@ -93,7 +93,7 @@ class AuthController extends Controller
             ]);
         Mail::send('email.EmailVerificationEmail', ['otp' => $email_verification_OTP], function($message) use($request){
                 $message->to($request->email);
-                $message->subject('Welcome to Recepient');
+                $message->subject('Welcome to Recipty');
             });
         return response()->json([
             'message' => 'User successfully registered',

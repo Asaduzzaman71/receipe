@@ -18,7 +18,7 @@ class TutorialController extends Controller
     public function index()
     {
         try {
-            $tutorials = Tutorial::select('id','title','description')->with('tutorialImages')->get();
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->get();
             // $tutorials = Tutorial::with('tutorialImages')->select('title','description','is_premium','turotial_images:id');
             // $tutorials = Tutorial::join('tutorial_images', 'tutorials.id', '=', 'tutorial_images.tutorial_id')
             //    ->get(['tutorials.id','tutorials.title','tutorials.is_premium', 'tutorial_images.*']);
@@ -113,7 +113,7 @@ class TutorialController extends Controller
     public function update(Request $request, $id){
         try {
             $validator = Validator::make($request->all(), [
-                'title' => 'required|string|between:2,500',
+                'title' => 'required|string|between:2,500|unique:tutorials,title,'.$id,
                 'category_id' => 'required|integer',
                 'description' => 'required|string',
                 'ingredients.*' => 'required|integer|distinct', 
@@ -177,10 +177,11 @@ class TutorialController extends Controller
     public function uploadVideo(Request $request){
             $tutorial = Tutorial::whereId($request->tutorial_id)->first();
             if($request->hasFile('video')){
-                 Storage::disk('public')->delete( $tutorial->video);
+                Storage::disk('public')->delete( $tutorial->video);
                 $videoNameWithPath = $request->video->store('videos','public');
             }
             $tutorial->video = isset($videoNameWithPath) ? $videoNameWithPath : null;
+            $tutorial->video_length = $request->video_length;
             $tutorial->save();
             return response()->json([
                 'message' => 'tutorial video successfully'
