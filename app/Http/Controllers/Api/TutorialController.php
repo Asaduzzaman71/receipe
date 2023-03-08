@@ -32,6 +32,21 @@ class TutorialController extends Controller
         }
     }
 
+    public function tutorialByCategory($categoryId)
+    {
+        try {
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->where('category_id',$categoryId)->get();
+            return response()->json([
+                'tutorials' => $tutorials,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function store(Request $request){
         try{
             $validator = Validator::make($request->all(), [

@@ -24,7 +24,7 @@ class AuthController extends Controller
      * @return void
      */
     public function __construct() {
-        $this->middleware('auth:api', ['except' => ['login', 'register','submitForgetPasswordForm','submitResetPasswordForm','verifyAccount','resendVerificationEmail','showLearn']]);
+        $this->middleware('auth:api', ['except' => ['login', 'userLogin', 'register','submitForgetPasswordForm','submitResetPasswordForm','verifyAccount','resendVerificationEmail','showLearn']]);
     }
 
     /**
@@ -53,12 +53,54 @@ class AuthController extends Controller
         return $this->createNewToken($token,$email_verified_at);
     }
 
+     public function userLogin(Request $request){
+
+    	$validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()){
+            return response()->json(array(
+            'success' => false,
+            'error' => $validator->getMessageBag()),
+            422);
+        }
+
+        if (! $token = auth('api')->attempt($validator->validated())) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = User::where('email',$request->email)->first();
+        
+        if ( !$user->role == "user") {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+       
+        $email_verified_at = $user->email_verified_at;
+        return $this->createNewToken($token,$email_verified_at);
+    }
+
     /**
      * Register a User.
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request) {
+
+        $existingUser =  User::with('profileInformation')->where('email',$request->email)->first();
+        if(isset($existingUser)){
+            $userVerify = UserVerify::where('user_id', $existingUser->id)->first();
+            if( $existingUser->email_verified_at == null ) {
+                return response()->json([
+                    'message' => 'Already registered',
+                    'user' => $existingUser,
+                    'is_newly_registered' => 1,
+                    'otp'=> $userVerify->token,
+                ], 200);
+            }
+        }
+    
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
@@ -90,15 +132,16 @@ class AuthController extends Controller
         UserVerify::create([
             'user_id' => $user->id,
             'token' => $email_verification_OTP
-            ]);
-        Mail::send('email.EmailVerificationEmail', ['otp' => $email_verification_OTP], function($message) use($request){
-                $message->to($request->email);
-                $message->subject('Welcome to Recipty');
-            });
+        ]);
+        Mail::send('email.emailVerificationEmail', ['otp' => $email_verification_OTP], function($message) use($request){
+            $message->to($request->email);
+            $message->subject('Welcome to Recipty');
+        });
         return response()->json([
             'message' => 'User successfully registered',
             'user' => $user,
-            'otp'=>$email_verification_OTP
+            'is_newly_registered' => 0,
+            'otp'=> $email_verification_OTP
         ], 201);
     }
 

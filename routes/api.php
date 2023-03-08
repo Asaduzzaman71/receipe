@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\IngredientController;
 use App\Http\Controllers\Api\TutorialController;
 use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\HomeController;
 
 
 
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\BlogController;
 */
 
 Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/user/login', [AuthController::class, 'userLogin']);
 Route::post('auth/register', [AuthController::class, 'register']);
 
 //email verification api
@@ -31,6 +33,19 @@ Route::post('/resend-otp-for-email-verify',[AuthController::class, 'resendVerifi
 //password reset
 Route::post('/forgot-password', [AuthController::class, 'submitForgetPasswordForm']);
 Route::post('/reset-password', [AuthController::class, 'submitResetPasswordForm']);
+
+Route::group([
+    'middleware' => 'jwt.verify',
+    'prefix' => 'user'
+], function ($router) {
+    Route::get('/home', [HomeController::class, 'index']);
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/tutorials', [TutorialController::class, 'index']);
+    Route::get('/tutorials/[id}', [TutorialController::class, 'show']);
+    Route::get('/categories/[id}/tutorials', [TutorialController::class, 'tutorialByCategory']);
+    Route::get('/blogs', [BlogController::class, 'index']);
+});
+
 
 Route::group([
     'middleware' => 'jwt.verify',
