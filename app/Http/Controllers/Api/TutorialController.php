@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Tutorial;
 use App\Models\TutorialImage;
 use App\Models\TutorialStep;
+use App\Models\Bookmark;
 use App\Traits\FileUpload;
 use App\Http\Controllers\Controller;
 use App\Models\Ingredient;
@@ -36,6 +37,27 @@ class TutorialController extends Controller
     {
         try {
             $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->where('category_id',$categoryId)->get();
+            $bookmarkedTutorials = Bookmark::pluck('tutorial_id')->toArray();
+            foreach($tutorials  as $tutorial){
+                    if(in_array($tutorial->id,$bookmarkedTutorials)){
+                        $tutorial->is_bookmarked =  true;
+                    }else{
+                        $tutorial->is_bookmarked =  false;
+                    }
+            }
+            return response()->json([
+                'tutorials' => $tutorials,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function searchTutorialByTitle(Request $request)
+    {
+        try {
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->where('title','LIKE','%'.$request->title.'%')->get();
             return response()->json([
                 'tutorials' => $tutorials,
             ], 200);
@@ -112,8 +134,14 @@ class TutorialController extends Controller
 
     public function show( $id){
         try {
-            $tutorial = Tutorial::with('tutorialSteps','tutorialImages')->whereId($id)->first();
+            $tutorial = Tutorial::with('category','tutorialSteps','tutorialImages')->whereId($id)->first();
             $ingredients = Ingredient::whereIn('id', json_decode($tutorial->ingredients))->get();
+            $bookmark = Bookmark::where('tutorial_id',$tutorial->id)->first();
+            if(isset($bookmark)){
+                $tutorial->is_bookmarked = true;
+            }else{
+                $tutorial->is_bookmarked = false;
+            }
             $tutorial->ingredients = $ingredients;
             return response()->json([
                 'tutorial' => $tutorial,

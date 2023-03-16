@@ -54,7 +54,6 @@ class AuthController extends Controller
     }
 
      public function userLogin(Request $request){
-
     	$validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
@@ -295,10 +294,8 @@ class AuthController extends Controller
     public function editProfile(Request $request){
 
         $validator = Validator::make($request->all(), [
-            'first_name'=>'nullable|string',
-            'last_name'=>'nullable|string',
-            'password' => 'nullable|string|min:6|confirmed',
-            'phone_number' => 'nullable|unique:profile_information,phone_number'.Auth()->user()->profileInformation->id,
+            'name'=>'nullable|string',
+            'phone_number' => 'nullable|unique:users,phone_number,'.Auth()->user()->id,
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -309,38 +306,23 @@ class AuthController extends Controller
             400);
         }
         $user = Auth()->user();
-        if($request->input('old_password')){
-            if (Hash::check($request->input('old_password'), Auth()->user()->password)){
-                $user->password = bcrypt($request->input('password'));
-            }else{
-                return response()->json(['status'=>404, 'message'=>'Old Password not match']);
-            }
-        }
-        $user->first_name = $request->first_name ? $request->first_name : $user->first_name;
-        $user->last_name = $request->last_name ? $request->last_name : $user->last_name;
+        $user->name = $request->name ? $request->name : $user->name;
+        $user->phone_number = $request->phone_number ?? $user->phone_number;
         $user->save();
         if($request->hasFile('profile_picture')){
             $profieImagePath = $this->FileUpload($request->profile_picture,'profile');
         }
         $profileInformation = ProfileInformation::where('user_id',Auth()->user()->id)->first();
-        $profileInformation->phone_number = $request->phone_number??$profileInformation->phone_number;
-        $profileInformation->profile_picture = isset($profieImagePath)?$profieImagePath:$profileInformation->profile_picture;
+        $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : $profileInformation->profile_picture;
         $profileInformation->save();
         return response()->json([
-            'status'=>200,
-            'message'=>'Profile updated successfully',
+            'access_token' => '',
+            'email_verified_at'=>'',
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => auth('api')->user(),
             'profile_information' => auth('api')->user()->profileInformation,
-            'is_answered_question' =>auth('api')->user()->survey ? true : false
         ]);
 
     }
-    public function showLearn(){
-        $learn = Learn::all();
-        return response()->json([
-            'status'=>200,
-            'learn' => $learn,
-        ]);
-    }
-
 }

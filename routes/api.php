@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\IngredientController;
 use App\Http\Controllers\Api\TutorialController;
 use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\BookmarkController;
 
 
 
@@ -21,10 +22,9 @@ use App\Http\Controllers\Api\HomeController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
 Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/user/login', [AuthController::class, 'userLogin']);
 Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/user/login', [AuthController::class, 'userLogin']);
 
 //email verification api
 Route::get('/user/{userId}/verify/{otp}', [AuthController::class, 'verifyAccount']);
@@ -40,10 +40,16 @@ Route::group([
 ], function ($router) {
     Route::get('/home', [HomeController::class, 'index']);
     Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/tutorials', [TutorialController::class, 'index']);
-    Route::get('/tutorials/[id}', [TutorialController::class, 'show']);
-    Route::get('/categories/[id}/tutorials', [TutorialController::class, 'tutorialByCategory']);
+    Route::get('/tutorials', [HomeController::class, 'tutorialsWithBookmarksinfo']);
+    Route::get('/tutorials/{id}', [TutorialController::class, 'show']);
+    Route::get('/categories/{id}/tutorials', [TutorialController::class, 'tutorialByCategory']);
     Route::get('/blogs', [BlogController::class, 'index']);
+    Route::post('/profile-update', [AuthController::class, 'editProfile']);
+    Route::post('/search-tutorial', [TutorialController::class, 'searchTutorialByTitle']);
+    Route::post('/bookmarks', [BookmarkController::class, 'store']);
+    Route::get('/bookmarks', [BookmarkController::class, 'index']);
+    Route::delete('/bookmarks/{id}', [BookmarkController::class, 'destroy']);
+    
 });
 
 
