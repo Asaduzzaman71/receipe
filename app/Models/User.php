@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Models\ProfileInformation;
+use App\Models\Subscription;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -16,6 +17,11 @@ class User extends Authenticatable implements JWTSubject
     public function profileInformation()
     {
         return $this->hasOne(ProfileInformation::class);
+    }
+    
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class);
     }
     /**
      * The attributes that are mass assignable.

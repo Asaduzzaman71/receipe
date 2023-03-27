@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
 use Hash;
 use App\Traits\FileUpload;
 use App\Models\UserVerify;
-
+use App\Models\Subscription;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -24,7 +25,7 @@ class AuthController extends Controller
      * @return void
      */
     public function __construct() {
-        $this->middleware('auth:api', ['except' => ['login', 'userLogin', 'register','submitForgetPasswordForm','submitResetPasswordForm','verifyAccount','resendVerificationEmail','showLearn']]);
+        $this->middleware('auth:api', ['except' => ['login','userLogin', 'register','submitForgetPasswordForm','submitResetPasswordForm','verifyAccount','resendVerificationEmail','showLearn','updatePaymentStatus', 'checkPaymentStatus']]);
     }
 
     /**
@@ -52,8 +53,8 @@ class AuthController extends Controller
         $email_verified_at = $user->email_verified_at;
         return $this->createNewToken($token,$email_verified_at);
     }
+    public function userLogin(Request $request){
 
-     public function userLogin(Request $request){
     	$validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
@@ -72,7 +73,7 @@ class AuthController extends Controller
 
         $user = User::where('email',$request->email)->first();
         
-        if ( !$user->role == "user") {
+        if ( $user->role == "admin") {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
        
@@ -86,7 +87,6 @@ class AuthController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request) {
-
         $existingUser =  User::with('profileInformation')->where('email',$request->email)->first();
         if(isset($existingUser)){
             $userVerify = UserVerify::where('user_id', $existingUser->id)->first();
@@ -105,7 +105,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|confirmed|min:6',
             'phone_number' => 'nullable|unique:users',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile_picture' => 'nullable|string',
         ]);
         if ($validator->fails()){
             return response()->json(array(
@@ -118,7 +118,7 @@ class AuthController extends Controller
                     ['password' => bcrypt($request->password)],
                 ));
         if($user){
-            if($request->hasFile('profile_picture')){
+            if($request->profile_picture){
                 $profieImagePath = $this->FileUpload($request->profile_picture,'profile');
             }
             $profileInformation = new ProfileInformation;
@@ -296,7 +296,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name'=>'nullable|string',
             'phone_number' => 'nullable|unique:users,phone_number,'.Auth()->user()->id,
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile_picture' => 'nullable|string',
         ]);
 
         if($validator->fails()){
@@ -309,15 +309,25 @@ class AuthController extends Controller
         $user->name = $request->name ? $request->name : $user->name;
         $user->phone_number = $request->phone_number ?? $user->phone_number;
         $user->save();
-        if($request->hasFile('profile_picture')){
+        if($request->profile_picture){
+           
             $profieImagePath = $this->FileUpload($request->profile_picture,'profile');
+       
         }
         $profileInformation = ProfileInformation::where('user_id',Auth()->user()->id)->first();
-        $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : $profileInformation->profile_picture;
+        if($profileInformation==null){
+             $profileInformation = new ProfileInformation;
+              $profileInformation->user_id = Auth()->user()->id;
+             $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : null;
+        }else{
+              $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : $profileInformation->profile_picture;
+        }
+      
+      
         $profileInformation->save();
         return response()->json([
             'access_token' => '',
-            'email_verified_at'=>'',
+            'email_verified_at' => '',
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => auth('api')->user(),
@@ -325,4 +335,35 @@ class AuthController extends Controller
         ]);
 
     }
+    public function updatePaymentStatus(Request $request){
+        Subscription::where('user_id', Auth()->user()->id )->first()->delete();
+        $subscription = new Subscription();
+        $subscription->user_id = Auth()->user()->id;
+        $subscription->subscription_starts_at = Carbon::now();
+        if($request->package_no == 1 ){
+            $subscription->subscription_expires_at = Carbon::now()->addDay(7);
+        }elseif( $request->package_no == 2 ){
+            $subscription->subscription_expires_at = Carbon::now()->addDay(30);
+        }else{
+            $subscription->subscription_expires_at = Carbon::now()->addDay(3650000);
+        }
+        $subscription->save();
+        return response()->json(array(
+        'success' => true,
+        'message' => 'subscription updated successfully'),
+        200);
+    }
+    public function checkPaymentStatus(){
+        $subscription = Subscription::where('user_id', Auth()->user()->id )->whereDate('subscription_expires_at', '>=', Carbon::now())->first();
+        if($subscription){
+            $is_subscribed = true;
+        }else{
+            $is_subscribed = false;
+        }
+        return response()->json(array(
+            'success' => true,
+            'is_subscribed' => $is_subscribed
+        ),200);
+    }
+
 }

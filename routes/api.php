@@ -58,6 +58,8 @@ Route::group([
     'prefix' => 'auth'
 ], function ($router) {
     Route::get('/logout', [AuthController::class, 'logout']);
+    Route::post('/update-payment-status', [AuthController::class, 'updatePaymentStatus']);
+    Route::get('/check-payment-status', [AuthController::class, 'checkPaymentStatus']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/user-profile', [AuthController::class, 'userProfile']);
 });
