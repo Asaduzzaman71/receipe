@@ -19,7 +19,7 @@ class TutorialController extends Controller
     public function index()
     {
         try {
-            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->get();
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie','total_views')->with('tutorialImages')->get();
             // $tutorials = Tutorial::with('tutorialImages')->select('title','description','is_premium','turotial_images:id');
             // $tutorials = Tutorial::join('tutorial_images', 'tutorials.id', '=', 'tutorial_images.tutorial_id')
             //    ->get(['tutorials.id','tutorials.title','tutorials.is_premium', 'tutorial_images.*']);
@@ -36,14 +36,14 @@ class TutorialController extends Controller
     public function tutorialByCategory($categoryId)
     {
         try {
-            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->where('category_id',$categoryId)->get();
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie','total_views')->with('tutorialImages')->where('category_id',$categoryId)->get();
             $bookmarkedTutorials = Bookmark::pluck('tutorial_id')->toArray();
             foreach($tutorials  as $tutorial){
-                    if(in_array($tutorial->id,$bookmarkedTutorials)){
-                        $tutorial->is_bookmarked =  true;
-                    }else{
-                        $tutorial->is_bookmarked =  false;
-                    }
+                if(in_array($tutorial->id,$bookmarkedTutorials)){
+                    $tutorial->is_bookmarked =  true;
+                }else{
+                    $tutorial->is_bookmarked =  false;
+                }
             }
             return response()->json([
                 'tutorials' => $tutorials,
@@ -57,7 +57,7 @@ class TutorialController extends Controller
     public function searchTutorialByTitle(Request $request)
     {
         try {
-            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->where('title','LIKE','%'.$request->title.'%')->get();
+            $tutorials = Tutorial::select('id','title','description','video_length', 'calorie','total_views')->with('tutorialImages')->where('title','LIKE','%'.$request->title.'%')->get();
             return response()->json([
                 'tutorials' => $tutorials,
             ], 200);
@@ -135,6 +135,8 @@ class TutorialController extends Controller
     public function show( $id){
         try {
             $tutorial = Tutorial::with('category','tutorialSteps','tutorialImages')->whereId($id)->first();
+            $tutorial->total_views = $tutorial->total_views + 1;
+            $tutorial->save(); 
             $ingredients = Ingredient::whereIn('id', json_decode($tutorial->ingredients))->get();
             $bookmark = Bookmark::where('tutorial_id',$tutorial->id)->first();
             if(isset($bookmark)){

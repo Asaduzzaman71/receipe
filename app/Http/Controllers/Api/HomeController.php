@@ -37,7 +37,7 @@ class HomeController extends Controller
     public function tutorialsWithBookmarksinfo()
     {
         try {
-           $tutorials = Tutorial::select('id','title','description','video_length', 'calorie')->with('tutorialImages')->get();
+           $tutorials = Tutorial::select('id','title','description','video_length', 'calorie','total_views')->with('tutorialImages')->get();
            $bookmarkedTutorials = Bookmark::pluck('tutorial_id')->toArray();
            foreach($tutorials  as $tutorial){
                 if(in_array($tutorial->id,$bookmarkedTutorials)){
