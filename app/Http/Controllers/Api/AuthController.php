@@ -104,7 +104,6 @@ class AuthController extends Controller
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|confirmed|min:6',
-            'phone_number' => 'nullable|unique:users',
             'profile_picture' => 'nullable|string',
         ]);
         if ($validator->fails()){
@@ -250,7 +249,7 @@ class AuthController extends Controller
             422);
         }
 
-        $OTP = Str::random(6);
+        $OTP = mt_rand(100000,999999);
 
         DB::table('password_resets')->insert([
             'email' => $request->email,
@@ -262,8 +261,8 @@ class AuthController extends Controller
             $message->to($request->email);
             $message->subject('Reset Password');
         });
-
-        return response()->json(["message" => "We have e-mailed you an OTP!"],200);
+        $user = User::where('email',$request->email)->first();
+        return response()->json(["message" => "We have e-mailed you an OTP!","user"=>$user ],200);
     }
 
     public function submitResetPasswordForm(Request $request)
@@ -295,7 +294,6 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name'=>'nullable|string',
-            'phone_number' => 'nullable|unique:users,phone_number,'.Auth()->user()->id,
             'profile_picture' => 'nullable|string',
         ]);
 
@@ -317,7 +315,7 @@ class AuthController extends Controller
         $profileInformation = ProfileInformation::where('user_id',Auth()->user()->id)->first();
         if($profileInformation==null){
              $profileInformation = new ProfileInformation;
-              $profileInformation->user_id = Auth()->user()->id;
+             $profileInformation->user_id = Auth()->user()->id;
              $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : null;
         }else{
               $profileInformation->profile_picture = isset($profieImagePath) ? $profieImagePath : $profileInformation->profile_picture;

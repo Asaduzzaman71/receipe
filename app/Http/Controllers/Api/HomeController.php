@@ -5,10 +5,27 @@ use App\Models\Category;
 use App\Models\Blog;
 use App\Models\Bookmark;
 use App\Models\Tutorial;
+use App\Models\Subscription;
 use App\Http\Controllers\Controller;
 
 class HomeController extends Controller
 {
+    public function dashboard(){
+        try {
+            $totalBlogs = Blog::count();
+            $totalTutorials = Tutorial::count();
+            $totalSubscribers = Subscription::count();
+            return response()->json([
+                'totalBlogs' => $totalBlogs,
+                'totalTutorials' => $totalTutorials,
+                'totalSubscribers' => $totalSubscribers,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function index()
     {
         try {

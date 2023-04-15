@@ -65,6 +65,7 @@ Route::group([
 });
 
 Route::group( ['middleware' => ['jwt.verify','admin']], function(){
+    Route::get('/dashboard', [HomeController::class, 'dashboard']);
     Route::get('/users', [AuthController::class, 'userList']);
     Route::resource('categories', CategoryController::class);
     Route::resource('subcategories', SubCategoryController::class);
